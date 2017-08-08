@@ -1,0 +1,10 @@
+/misc/student/tananaed/tfspecialops/build/CMakeFiles/test.dir
+/misc/student/tananaed/tfspecialops/build/CMakeFiles/edit_cache.dir
+/misc/student/tananaed/tfspecialops/build/CMakeFiles/rebuild_cache.dir
+/misc/student/tananaed/tfspecialops/build/lib/CMakeFiles/test.dir
+/misc/student/tananaed/tfspecialops/build/lib/CMakeFiles/edit_cache.dir
+/misc/student/tananaed/tfspecialops/build/lib/CMakeFiles/rebuild_cache.dir
+/misc/student/tananaed/tfspecialops/build/lib/CMakeFiles/tfspecialops.dir
+/misc/student/tananaed/tfspecialops/build/test/CMakeFiles/test.dir
+/misc/student/tananaed/tfspecialops/build/test/CMakeFiles/edit_cache.dir
+/misc/student/tananaed/tfspecialops/build/test/CMakeFiles/rebuild_cache.dir

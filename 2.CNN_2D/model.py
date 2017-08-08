@@ -9,6 +9,8 @@ from __future__ import division
 from __future__ import print_function
 import sys
 sys.path.insert(0, '../0.layers/')
+sys.path.insert(0,'../0.external/tf_specialops/python/')
+from tfspecialops import tfspecialops as ops
 import os
 import re
 import tarfile
@@ -44,122 +46,103 @@ def inference(images, phase_train,scope='CNN'):
     
     with tf.name_scope(scope, [images]):
         
-        #THE DEPTH NETWORK
-        
+        #THE DEPTH NETWORK        
         #Layer 1: Output Size 192x256x32
         conv1=cnv.conv(images,'conv1',[11, 11, 3, 32],stride=[1,1,1, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
         bnorm1=bn.batch_norm_layer(conv1,train_phase=phase_train,scope_bn='BN1')
-        relu1=act.ReLU(bnorm1,'parametricReLU1') 
+        relu1=ops.leaky_relu(input=bnorm1, leak=0.1)
         #SKIP CONNECTION 0
         
         #Layer 2 - Downsample:Output Size 96x128x64
         conv2=cnv.conv(relu1,'conv2',[9, 9, 32, 64],stride=[1,2,2, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
         bnorm2=bn.batch_norm_layer(conv2,train_phase=phase_train,scope_bn='BN2')
-        relu2=act.ReLU(bnorm2,'ReLU2')
+        relu2=ops.leaky_relu(input=bnorm2, leak=0.1)
         
         #Layer 3:Output Size 96x128x64  
         conv3=cnv.conv(relu2,'conv3',[3, 3, 64, 64],wd=WEIGHT_DECAY,FLOAT16=FLOAT16) 
         bnorm3=bn.batch_norm_layer(conv3,train_phase=phase_train,scope_bn='BN3')
-        relu3=act.parametric_relu(bnorm3,'parametricReLU3')
+        relu3=ops.leaky_relu(input=bnorm3, leak=0.1)
         #SKIP CONNECTION 1
         
         #Layer 4 - Downsample:Output Size 48x64x128 
         conv4=cnv.conv(relu3,'conv4',[7, 7, 64, 128],stride=[1,2,2, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
         bnorm4=bn.batch_norm_layer(conv4,train_phase=phase_train,scope_bn='BN4')
-        relu4=act.ReLU(bnorm4,'ReLU4')     
+        relu4=ops.leaky_relu(input=bnorm4, leak=0.1)   
         
         #Layer 5:Output Size 48x64x128 
         conv5=cnv.conv(relu4,'conv5',[3, 3, 128, 128],wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
         bnorm5=bn.batch_norm_layer(conv5,train_phase=phase_train,scope_bn='BN5')
-        relu5=act.parametric_relu(bnorm5,'parametricReLU5')
+        relu5=ops.leaky_relu(input=bnorm5, leak=0.1)
         #SKIP CONNECTION 2    
         
         #Layer 6 Downsample:Output Size 24x32x256
         conv6_1=cnv.conv(relu5,'conv6_1',[5, 1, 128, 256],stride=[1,2,1, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
         conv6_2=cnv.conv(conv6_1,'conv6_2',[1, 5, 256, 256],stride=[1,1,2, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
         bnorm6=bn.batch_norm_layer(conv6_2,train_phase=phase_train,scope_bn='BN6')
-        relu6=act.ReLU(bnorm6,'ReLU6')
+        relu6=ops.leaky_relu(input=bnorm6, leak=0.1)
         
         #Layer 7:Output Size 24x32x256 
         conv7_1=cnv.conv(relu6,'conv7_1',[3, 1, 256, 256],wd=WEIGHT_DECAY,FLOAT16=FLOAT16) 
         conv7_2=cnv.conv(conv7_1,'conv7_2',[1, 3, 256, 256],wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
         bnorm7=bn.batch_norm_layer(conv7_2,train_phase=phase_train,scope_bn='BN7')
-        relu7=act.parametric_relu(bnorm7,'parametricReLU7')
+        relu7=ops.leaky_relu(input=bnorm7, leak=0.1)
         #SKIP CONNECTION 3  
         
         #Layer 8 Downsample:Output Size 12x16x512 
         conv8_1=cnv.conv(relu7,'conv8_1',[3, 1, 256, 512],stride=[1,2,1, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16) 
         conv8_2=cnv.conv(conv8_1,'conv8_2',[1, 3, 512, 512],stride=[1,1,2, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16) 
         bnorm8=bn.batch_norm_layer(conv8_2,train_phase=phase_train,scope_bn='BN8')
-        relu8=act.ReLU(bnorm8,'ReLU8') 
+        relu8=ops.leaky_relu(input=bnorm8, leak=0.1)
         
         #Layer 9:Output Size 12x16x512
         conv9_1=cnv.conv(relu8,'conv9_1',[1, 3, 512, 512],wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
         conv9_2=cnv.conv(conv9_1,'conv9_2',[3, 1, 512, 512],wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
         bnorm9=bn.batch_norm_layer(conv9_2,train_phase=phase_train,scope_bn='BN9')
-        relu9=act.parametric_relu(bnorm9,'ReLU9')  
-        
-        #Layer 10: Output Size 6x8x1024
-        conv10_1=cnv.conv(relu9,'conv10_1',[1, 3, 512, 1024],stride=[1,2,1, 1],wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
-        conv10_2=cnv.conv(conv10_1,'conv10_2',[3, 1, 1024, 1024],stride=[1,1,2, 1],wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
-        bnorm10=bn.batch_norm_layer(conv10_2,train_phase=phase_train,scope_bn='BN10')
-        relu10=act.parametric_relu(bnorm10,'parametricReLU10')
-        
-        
-        #GO UP 
-        #Layer 11 UP 1:Output Size 12x16x512
-        deconv0=dcnv.deconv(relu10,[BATCH_SIZE,int(IMAGE_SIZE_H/16),int(IMAGE_SIZE_W/16),512],'deconv0',[4, 4, 512, 1024],stride=[1, 2, 2, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
-        dbnorm0=bn.batch_norm_layer(deconv0+relu9,train_phase=phase_train,scope_bn='dBN0')
-        drelu0=act.parametric_relu(dbnorm0,'dparametricReLU0')
-        
-        #Layer 12 UP 1:Output Size 12x16x512        
-        conv12_1=cnv.conv(drelu0,'conv12_1',[1, 3, 512, 512],wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
-        conv12_2=cnv.conv(conv12_1,'conv12_2',[3, 1, 512, 512],wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
-        bnorm12=bn.batch_norm_layer(conv12_2,train_phase=phase_train,scope_bn='BN12')
-        relu12=act.parametric_relu(bnorm12,'parametricReLU12')        
-        
-        #Layer 13 UP 1:Output Size 24x32x256
-        deconv1=dcnv.deconv(relu12,[BATCH_SIZE,int(IMAGE_SIZE_H/8),int(IMAGE_SIZE_W/8),256],'deconv1',[4, 4, 256, 512],stride=[1, 2, 2, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
-        dbnorm1=bn.batch_norm_layer(deconv1+relu7,train_phase=phase_train,scope_bn='dBN1')
-        drelu1=act.parametric_relu(dbnorm1,'dparametricReLU1')
+        relu9=ops.leaky_relu(input=bnorm9, leak=0.1)
                 
-        #Layer 14 UP 1:Output 24x32x256        
-        conv14_1=cnv.conv(drelu1,'conv14_1',[1, 3, 256, 256],wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
-        conv14_2=cnv.conv(conv14_1,'conv14_2',[3, 1, 256, 256],wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
-        bnorm14=bn.batch_norm_layer(conv14_2,train_phase=phase_train,scope_bn='BN14')
-        relu14=act.parametric_relu(bnorm14,'parametricReLU14')          
+        #GO UP            
+        #Layer 10 UP 1:Output Size 24x32x256
+        conv10=dcnv.deconv(relu9,[BATCH_SIZE,int(IMAGE_SIZE_H/8),int(IMAGE_SIZE_W/8),256],'deconv1',[4, 4, 256, 512],stride=[1, 2, 2, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
+        bnorm10=bn.batch_norm_layer(conv10,train_phase=phase_train,scope_bn='BN10')
+        relu10=ops.leaky_relu(input=bnorm10, leak=0.1)
+                
+        #Layer 11 UP 1:Output 24x32x256        
+        conv11=cnv.conv(relu10+relu7,'conv11',[3,3, 256, 256],wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
+        bnorm11=bn.batch_norm_layer(conv11,train_phase=phase_train,scope_bn='BN11')
+        relu11=ops.leaky_relu(input=bnorm11, leak=0.1)       
         
-        #Layer 15 UP 2:Output Size 48x64x128  
-        deconv2=dcnv.deconv(relu14,[BATCH_SIZE,int(IMAGE_SIZE_H/4),int(IMAGE_SIZE_W/4),128],'deconv2',[4, 4, 128, 256],stride=[1, 2, 2, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
-        dbnorm2=bn.batch_norm_layer(deconv2+relu5,train_phase=phase_train,scope_bn='dBN2')
-        drelu2=act.parametric_relu(dbnorm2,'dparametricReLU2')
+        #Layer 12 UP 2:Output Size 48x64x128  
+        conv12=dcnv.deconv(relu11,[BATCH_SIZE,int(IMAGE_SIZE_H/4),int(IMAGE_SIZE_W/4),128],'deconv2',[4, 4, 128, 256],stride=[1, 2, 2, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
+        bnorm12=bn.batch_norm_layer(conv12,train_phase=phase_train,scope_bn='BN12')
+        relu12=ops.leaky_relu(input=bnorm12, leak=0.1)  
+                
+        #Layer 13 UP 2:Output Size 48x64x128          
+        conv13=cnv.conv(relu12+relu5,'conv13',[3, 3, 128, 128],wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
+        bnorm13=bn.batch_norm_layer(conv13,train_phase=phase_train,scope_bn='BN13')
+        relu13=ops.leaky_relu(input=bnorm13, leak=0.1) 
         
-        #Layer 16 UP 2:Output Size 48x64x128          
-        conv16=cnv.conv(drelu2,'conv16',[3, 3, 128, 128],wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
+        #Layer 14 UP 3:Output Size 96x128x64    
+        conv14=dcnv.deconv(relu13,[BATCH_SIZE,int(IMAGE_SIZE_H/2),int(IMAGE_SIZE_W/2),64],'deconv3',[4, 4, 64, 128],stride=[1, 2, 2, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
+        bnorm14=bn.batch_norm_layer(conv14,train_phase=phase_train,scope_bn='BN14')
+        relu14=ops.leaky_relu(input=bnorm14, leak=0.1) 
+        
+        #Layer 15 UP 3:Output Size 96x128x64  
+        conv15=cnv.conv(relu14+relu3,'conv15',[3, 3, 64, 64],wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
+        bnorm15=bn.batch_norm_layer(conv15,train_phase=phase_train,scope_bn='BN15')
+        relu15=ops.leaky_relu(input=bnorm15, leak=0.1) 
+        
+        #Layer 16 UP 4:Output Size 192x256x32      
+        conv16=dcnv.deconv(relu15,[BATCH_SIZE,int(IMAGE_SIZE_H),int(IMAGE_SIZE_W),32],'deconv4',[4, 4, 32, 64],stride=[1, 2, 2, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
         bnorm16=bn.batch_norm_layer(conv16,train_phase=phase_train,scope_bn='BN16')
-        relu16=act.parametric_relu(bnorm16,'parametricReLU16')
+        relu16=ops.leaky_relu(input=bnorm16, leak=0.1) 
         
-        #Layer 17 UP 3:Output Size 96x128x64    
-        deconv3=dcnv.deconv(relu16,[BATCH_SIZE,int(IMAGE_SIZE_H/2),int(IMAGE_SIZE_W/2),64],'deconv3',[4, 4, 64, 128],stride=[1, 2, 2, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
-        dbnorm3=bn.batch_norm_layer(deconv3+relu3,train_phase=phase_train,scope_bn='dBN3')
-        drelu3=act.parametric_relu(dbnorm3,'dparametricReLU3')
+        #Layer 17:Output Size 192x256x32   
+        conv17=cnv.conv(relu16+relu1,'conv17',[3, 3, 32, 32],wd=WEIGHT_DECAY,FLOAT16=FLOAT16) 
+        bnorm17=bn.batch_norm_layer(conv17,train_phase=phase_train,scope_bn='BN17')
+        relu17=ops.leaky_relu(input=bnorm17, leak=0.1)  
         
-        #Layer 18 UP 3:Output Size 96x128x64  
-        conv18=cnv.conv(drelu3,'conv18',[3, 3, 64, 64],wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
-        bnorm18=bn.batch_norm_layer(conv18,train_phase=phase_train,scope_bn='BN18')
-        relu18=act.parametric_relu(bnorm18,'parametricReLU18')
-        
-        #Layer 19 UP 4:Output Size 192x256x32      
-        deconv4=dcnv.deconv(relu18,[BATCH_SIZE,int(IMAGE_SIZE_H),int(IMAGE_SIZE_W),32],'deconv4',[4, 4, 32, 64],stride=[1, 2, 2, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
-        dbnorm5=bn.batch_norm_layer(deconv4+relu1,train_phase=phase_train,scope_bn='dBN4')
-        drelu4=act.parametric_relu(dbnorm5,'dparametricReLU4')
-        
-        #Layer 20:Output Size 192x256x32   
-        conv_last=cnv.conv(drelu4,'conv_last',[3, 3, 32, 32],wd=WEIGHT_DECAY,FLOAT16=FLOAT16) 
-        bnorm20=bn.batch_norm_layer(conv_last,train_phase=phase_train,scope_bn='BN20')
-        relu_last=act.ReLU(bnorm20,'ReLU_last')  
-        #Layer 15:Output Size 192x256x2 - 2 depth images  
-        depth=cnv.conv(relu_last,'scores',[3, 3, 32, 1],wd=0,FLOAT16=FLOAT16)
+        #Layer 18:Output Size 192x256x2 - 2 depth images  
+        depth=cnv.conv(relu17,'scores',[3, 3, 32, 1],wd=0,FLOAT16=FLOAT16)
 
         
         return depth

@@ -20,7 +20,7 @@ import math
 import tensorflow as tf 
 
 #Benjamin modules
-sys.path.insert(0,'/misc/lmbraid11/tananaed/Thesis/external/tfspecialops/python')
+sys.path.insert(0,'../0.external/tf_specialops/python/')
 from tfspecialops import tfspecialops as ops
 
 LOSSES_COLLECTION = 'losses'
