@@ -2,3 +2,5 @@
 *.pyc
 train
 *.gif
+log
+eval

@@ -1,9 +1,21 @@
+#
+# File: folder_checker.py
+# Date:05.04.2017
+# Author: Denis Tananaev
+#
+#
+#The folder_checker check that all the data sequences of the SUN3D dataset 
+#have the folder: "/image/", "/depth/", "/extrinsics/" and also file "intrinsics.txt"  
+
 import numpy as np
 import os
 
+
+
+dataset='/misc/lmbraid12/datasets/public/sun3d/data' # specify where is your SUN3D dataset
 list_train='../../0.dataset_split/list_train.txt'
 list_test='../../0.dataset_split/list_test.txt'
-dataset='/misc/lmbraid12/datasets/public/sun3d/data' # specify where is your SUN3D dataset
+
 
 def read_file(textfile):
   '''Read txt file and output array of strings line by line '''
