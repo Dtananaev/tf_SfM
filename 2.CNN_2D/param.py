@@ -18,7 +18,7 @@ FLOAT16=False
 
 #the parameters data upload
 BATCH_SIZE=16
-SEQUENCE_LEN=1
+SEQUENCE_LEN=2
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN=91865
 NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = 353
 # Constants describing the training process.

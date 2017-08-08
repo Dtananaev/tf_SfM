@@ -9,9 +9,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-
-
-
 import os
 import re
 import sys
@@ -85,68 +82,8 @@ def L1loss_depth(result,gt,scope=None,weight=1.0):
         tf.add_to_collection('losses', weight*res)
         
         
-def L2loss_depth(output, gt,scope=None,weight=1.0):
-    with tf.name_scope(scope, 'L2loss_depth', [output, gt]):
-        zero=tf.zeros_like(gt)
-        mask = tf.not_equal(gt, zero)
-        mask=tf.cast(mask,tf.float32)
-        n=tf.reduce_sum(mask)# number of elements for evaluation
-        # compute L2 loss
-        diff=tf.multiply(mask,tf.subtract(output,gt))#find difference
-        L2loss=tf.reduce_sum(tf.square(diff))/n
-        tf.add_to_collection('losses', weight*L2loss)
 
 
-
-'''
-def scinv_loss(result,gt,weight=1.0):
-    #don't eval on zero points in depth images
-    zero=tf.zeros_like(gt)
-    mask = tf.not_equal(gt, zero)
-    mask=tf.cast(mask,tf.float32)    
-    n=tf.reduce_sum(mask)# number of    elements for evaluation
-
-    
-    d=tf.subtract(tf.log(result),tf.log(gt))
-    d=tf.where(tf.is_nan(d),tf.zeros_like(d),d)
-    d=tf.where(tf.is_inf(d),tf.zeros_like(d),d)
-    d=tf.check_numerics(d, message='d problem', name=None)
-    d=tf.multiply(mask,d)
-    dsq=tf.reduce_sum(tf.square(d))
-    error= (1/n)*dsq - (0.5/(n*n))* tf.square(tf.reduce_sum(d))
-    tf.add_to_collection('losses', weight*error)
-
-def L1rel_loss(result,gt,weight=1.0):
-    #don't eval on zero points in depth images
-
-    zero=tf.zeros_like(gt)
-    mask = tf.not_equal(gt, zero)
-    mask=tf.cast(mask,tf.float32)    
-    n=tf.reduce_sum(mask)# number of elements for evaluation
-
-    
-    gt=tf.where(tf.equal(mask,zero),tf.ones_like(gt),gt)# replace all 0 by 1 in order to avoiding division by 0
-    error=(1/n)*tf.reduce_sum(tf.multiply(mask,tf.abs(tf.divide(tf.subtract(result,gt),gt))))
-    tf.add_to_collection('losses', weight*error)
-
-
-    
-def L1inv_loss(result,gt,weight=1.0):
-    
-    #don't eval on zero points in depth images
-    zero=tf.zeros_like(gt)
-    mask = tf.not_equal(gt, zero)
-    mask=tf.cast(mask,tf.float32)  
-    n=tf.reduce_sum(mask)
-    one=tf.ones_like(gt)
-    invgt=inverse(gt)
-    invresult=inverse(result)
-        
-    
-    error=tf.reduce_sum(tf.multiply(mask,tf.abs(tf.subtract(invresult,invgt))))/n
-    tf.add_to_collection('losses', weight*error)
-
-'''
 
 
 

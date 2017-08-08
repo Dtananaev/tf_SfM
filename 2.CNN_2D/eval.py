@@ -4,9 +4,10 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
-sys.path.insert(0, '../layers1.0/')
-
-
+sys.path.insert(0, '../0.layers/')
+import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1" 
 from datetime import datetime
 import math
 import os.path
@@ -19,13 +20,11 @@ import data
 import evalfunct 
 import losses as lss
 CHECKPOINT_DIR=param.TRAIN_LOG
-#NUM_EXAMPLES_PER_EPOCH_FOR_EVAL=2
 NUM_EXAMPLES_PER_EPOCH_FOR_EVAL=param.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL
 BATCH_SIZE=param.BATCH_SIZE
 MOVING_AVERAGE_DECAY=param.MOVING_AVERAGE_DECAY
 TEST_LOG=param.TEST_LOG
-EVAL_RUN_ONCE=True
-#EVAL_RUN_ONCE=param.EVAL_RUN_ONCE
+EVAL_RUN_ONCE=param.EVAL_RUN_ONCE
 EVAL_INTERVAL_SECS=param.EVAL_INTERVAL_SECS
 
 

@@ -4,7 +4,7 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
-sys.path.insert(0, './layers1.0/')
+sys.path.insert(0, '../0.layers/')
 import skimage.io as io
 import scipy.misc
 from numpy import newaxis
@@ -23,7 +23,6 @@ import data
 import evalfunct 
 import losses as lss
 
-
 import skimage.io as io
 import scipy.misc
 import tensorflow as tf
@@ -39,15 +38,16 @@ BATCH_SIZE=param.BATCH_SIZE
 MOVING_AVERAGE_DECAY=param.MOVING_AVERAGE_DECAY
 TEST_LOG=param.TEST_LOG
 EVAL_RUN_ONCE=True
+IMAGE_SIZE_W=param.IMAGE_SIZE_W
+IMAGE_SIZE_H=param.IMAGE_SIZE_H
+
 #EVAL_RUN_ONCE=param.EVAL_RUN_ONCE
 EVAL_INTERVAL_SECS=param.EVAL_INTERVAL_SECS
+
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1" 
 cur_dir="./pictures/"
-import moviepy.editor as mpy
-def npy_to_gif(npy, filename):
-    clip = mpy.ImageSequenceClip(list(npy), fps=10)
-    clip.write_gif(filename)
+
 
 def eval_once(result,depths,config,saver):
   
@@ -105,10 +105,7 @@ def eval_once(result,depths,config,saver):
                 'sec/batch)' % (datetime.now(), step, num_iter,
                                 examples_per_sec, sec_per_batch))
                     start_time = time.time()
-
-
-                
-
+            
         except Exception as e:  # pylint: disable=broad-except
             coord.request_stop(e)
 
@@ -122,22 +119,13 @@ def evaluate():
     images, depths,transforms = data.read_dataset(eval_data=True)
     # Build a Graph that computes the logits predictions from the
     # inference model.
-    
-
-    result = model.inference(images,True)
+    result, transform = model.inference(images,True)
     result = lss.inverse(result)
     depths = lss.inverse(depths)
-    #viz1=tf.slice(result,(0,0,0,0), (1,192,256,1)) 
-    #viz2=tf.slice(result,(0,0,0,1), (1,192,256,1))
-    #gt1=tf.slice(depths,(0,0,0,0), (1,192,256,1))
-    #gt2=tf.slice(depths,(0,0,0,1), (1,192,256,1))
-    #zero=tf.zeros_like(gt1)
-    #mask = tf.not_equal(gt1, zero)
-    #mask=tf.cast(mask,tf.float32) 
-    #viz11=tf.multiply(mask,viz)
-   # mask2 = tf.not_equal(gt2, zero)
-    #mask2=tf.cast(mask2,tf.float32) 
-    #viz12=tf.multiply(mask2,viz2) 
+    depths=tf.slice(depths,(0, 0, 0, 0), (BATCH_SIZE,IMAGE_SIZE_H, IMAGE_SIZE_W,1))
+
+
+
     # Restore the moving average version of the learned variables for eval.
     variable_averages = tf.train.ExponentialMovingAverage(
         model.MOVING_AVERAGE_DECAY)
@@ -157,6 +145,9 @@ def evaluate():
 
 
 def main(argv=None): 
+  if tf.gfile.Exists(cur_dir):
+    tf.gfile.DeleteRecursively(cur_dir)
+  tf.gfile.MakeDirs(cur_dir)
   evaluate()
 
 

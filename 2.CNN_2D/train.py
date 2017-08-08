@@ -18,6 +18,7 @@ import os
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1" 
+
 import model
 import param
 import data
@@ -34,9 +35,10 @@ def train():
     # Get images and labels for SUN3D.
     images, gtdepths, gttransforms = data.read_dataset(eval_data=False)
 
-    pdepth = model.inference(images,True)
+    pdepth, ptransforms = model.inference(images,True)
+    
     # Calculate loss.
-    loss = model.loss(pdepth,gtdepths)
+    loss = model.loss(pdepth,gtdepths,gttransforms,ptransforms)
 
     # Build a Graph that trains the model with one batch of examples and
     # updates the model parameters.

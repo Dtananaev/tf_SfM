@@ -99,6 +99,7 @@ def read_and_decode(filename_queue):
         #dp = tf.reshape(dp, [1, 192, 256, 1])
         rtf=tf.cast(rtf,tf.float32)
         rtf=tf.reshape(rtf,[12])
+        
         #preprocessing
         im=tf.image.per_image_standardization(im)
         
@@ -153,7 +154,8 @@ def batch_inputs(eval_data,batch_size=BATCH_SIZE, num_preprocess_threads=NUM_PRE
         num_preprocess_threads, capacity=min_queue_examples + 3 * batch_size)
         
         #6 set depth to meters
-        dp =tf.scalar_mul(0.001,dp)  
+        dp =tf.scalar_mul(0.001,dp)
+        
         #7 inverse depth
         dp = lss.inverse(dp) 
         

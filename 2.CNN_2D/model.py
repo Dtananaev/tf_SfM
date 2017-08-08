@@ -40,7 +40,7 @@ NUM_EPOCHS_PER_DECAY = param.NUM_EPOCHS_PER_DECAY     # Epochs after which learn
 LEARNING_RATE_DECAY_FACTOR = param.LEARNING_RATE_DECAY_FACTOR  # Learning rate decay factor.
 INITIAL_LEARNING_RATE = param.INITIAL_LEARNING_RATE     # Initial learning rate.
 WEIGHT_DECAY=param.WEIGHT_DECAY
-
+sq=param.SEQUENCE_LEN
 
 def inference(images, phase_train,scope='CNN'):
     
@@ -48,7 +48,7 @@ def inference(images, phase_train,scope='CNN'):
         
         #THE DEPTH NETWORK        
         #Layer 1: Output Size 192x256x32
-        conv1=cnv.conv(images,'conv1',[11, 11, 3, 32],stride=[1,1,1, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
+        conv1=cnv.conv(images,'conv1',[11, 11, 3*sq, 32],stride=[1,1,1, 1],padding='SAME',wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
         bnorm1=bn.batch_norm_layer(conv1,train_phase=phase_train,scope_bn='BN1')
         relu1=ops.leaky_relu(input=bnorm1, leak=0.1)
         #SKIP CONNECTION 0
@@ -141,19 +141,38 @@ def inference(images, phase_train,scope='CNN'):
         bnorm17=bn.batch_norm_layer(conv17,train_phase=phase_train,scope_bn='BN17')
         relu17=ops.leaky_relu(input=bnorm17, leak=0.1)  
         
-        #Layer 18:Output Size 192x256x2 - 2 depth images  
+        #Layer 18:Output Size 192x256x2 - 1 depth image  
         depth=cnv.conv(relu17,'scores',[3, 3, 32, 1],wd=0,FLOAT16=FLOAT16)
 
         
-        return depth
+        #MOTION NETWORK
+        conv_tr=cnv.conv(relu9,'conv_transform',[3, 3, 512, 128],wd=WEIGHT_DECAY,FLOAT16=FLOAT16)
+        relu_tr=ops.leaky_relu(input=conv_tr, leak=0.1)
+        #fc1
+        fc1=cnv.fclayer(relu_tr,BATCH_SIZE,1024,"fc1",wd=WEIGHT_DECAY)
+        fc1_relu=ops.leaky_relu(input=fc1, leak=0.1)
+        #fc2
+        fc2=cnv.fclayer(fc1_relu,BATCH_SIZE,128,"fc2",wd=WEIGHT_DECAY)
+        fc2_relu=ops.leaky_relu(input=fc2, leak=0.1) 
+                
+        #fc3        
+        #transforms        
+        transforms=cnv.fclayer(fc2_relu,BATCH_SIZE,sq*12,"transforms",wd=WEIGHT_DECAY)  
+
+        return depth, transforms
 
 
-def loss(pdepth,gtdepth):
-    #L2 for 2 depth images
+def loss(pdepth, gtdepth, transform, gttransform):
+    gtdepth=tf.slice(gtdepth,(0, 0, 0, 0), (BATCH_SIZE,IMAGE_SIZE_H, IMAGE_SIZE_W,1))
+    #L1 for the first depth image
     lss.L1loss_depth(pdepth, gtdepth,weight=300.0)
-    #lss.scinv_loss(pdepth,gtdepth,weight=1.0)
+
+    #Scale invariant gradient loss for depth
     lss.scinv_gradloss(pdepth, gtdepth,weight=1500.0)
-     
+    
+    #L1 loss for translation and rotation (it is rotation matrix format)
+    lss.L1loss_transforms(transform,gttransform, weight=100)
+    
     
     return tf.add_n(tf.get_collection('losses'), name='total_loss')
 
