@@ -1,0 +1,5 @@
+brown_bm_6/brown_bm_6
+brown_cogsci_8/brown_cogsci_8
+brown_cs_10/brown_cs10
+harvard_c11/hv_c11_2
+harvard_dq_office/hv_dq_office_2
